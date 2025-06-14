@@ -1,0 +1,4 @@
+# requirements.txt
+
+# This project uses only Python standard library modules;
+# no external dependencies required.
