@@ -355,13 +355,28 @@ class FFmpegApp(ttk.Frame):
                 cmd += ['-i', infile] + metadata_args + ['-c', 'copy', outfile]
 
         elif tab == 'Stitch':
+            import tempfile
             second = self.file_entry_1.get().strip()
             if not second:
                 messagebox.showerror('Error', 'Specify second file for stitching')
                 return
-            cmd += ['-i', infile, '-i', second]
-            filter_complex = ('[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1[outv][outa]')
-            cmd += ['-filter_complex', filter_complex, '-map', '[outv]', '-map', '[outa]', outfile]
+
+            # Create a temporary “list.txt” for FFmpeg’s concat demuxer
+            list_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt')
+            list_file.write(f"file '{infile}'\nfile '{second}'\n")
+            list_file.flush()
+            list_file.close()
+
+            # Build the concat-demuxer command
+            cmd = [
+                self.ffmpeg_executable,
+                '-y',
+                '-f', 'concat',
+                '-safe', '0',
+                '-i', list_file.name,
+                '-c', 'copy',
+                outfile
+            ]
 
         else:
             messagebox.showinfo('Info', f'Run logic for "{tab}" not implemented yet')
